@@ -106,6 +106,15 @@ def get_adjacency_and_weights(input_file, coeff_threshold=None, with_weights=Fal
     edge_index = build_edge_index_from_adjacency(adjacency_matrix, self_connections)
     return (edge_index, edge_weights)
 
+def relation_aware_loss(output, labels, weight=None):
+    output, intermediate = output
+    criterion_out = F.binary_cross_entropy_with_logits
+    criterion_intermediate = F.binary_cross_entropy_with_logits
+    lambda_1 = 1
+    lambda_2 = 1
+    loss_1 = criterion_out(output.float(), labels.float(), weight=weight)
+    loss_2 = criterion_intermediate(intermediate.float(), labels.float(), weight=weight)
+    return lambda_1 * loss_1 + lambda_2 * loss_2
 
 class Config(object):
     def __init__(self):
@@ -330,7 +339,7 @@ else:
     for idx, v in enumerate(rate):
         weight_pos.append(math.exp(1.0 - v))
         weight_neg.append(math.exp(v))
-criterion = F.binary_cross_entropy_with_logits
+criterion = relation_aware_loss
 
 # Optimizer
 finetuned_params = []
@@ -417,6 +426,7 @@ for epoch in range(start_epoch, cfg.total_epochs):
                                                          p=0.2)
     edge_index = edge_index.cuda()
     edge_weights = edge_weights.cuda()
+    edge_index = edge_index.long()
 
     for step, (imgs, targets) in enumerate(train_loader):
          
