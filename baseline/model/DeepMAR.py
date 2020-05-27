@@ -73,6 +73,13 @@ class DeepMAR_ResNet50(nn.Module):
         self.bn = torch.nn.BatchNorm1d(self.num_att)
         self.sigmoid = torch.nn.Sigmoid()
 
+    def get_data_from_outputs(self, x, adjacency, edge_weight):
+        data = []
+        for el in x:
+            datapoint = Data(x=el, edge_index=adjacency, edge_attr=edge_weight)
+            data.append(datapoint)
+        return data
+
     def forward(self, x, adjacency, edge_weight):
         x = self.base(x)
         x = F.avg_pool2d(x, x.shape[2:])
