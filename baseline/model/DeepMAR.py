@@ -16,7 +16,7 @@ class DeepMAR_ResNet50(nn.Module):
         **kwargs
     ):
         super(DeepMAR_ResNet50, self).__init__()
-        
+        self.device = torch.device('cuda:0')
         # init the necessary parameter for netwokr structure
         if 'num_att' in kwargs:
             self.num_att = kwargs['num_att'] 
