@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
 from .resnet import resnet50
-from torch_geometric import GCNConv
+from torch_geometric.nn import GCNConv
 from torch_geometric.data import Data, Batch
 
 
