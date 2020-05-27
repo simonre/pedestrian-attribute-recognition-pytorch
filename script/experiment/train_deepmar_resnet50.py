@@ -33,6 +33,79 @@ from baseline.utils.utils import to_scalar
 from baseline.utils.utils import may_set_mode 
 from baseline.utils.utils import may_mkdir 
 from baseline.utils.utils import set_seed
+import pandas as pd
+
+
+def build_graph_from_correlations(file_path, coeff_threshold=0.4, with_weights=False, reweighted=False, p=0.2):
+    corrs = pd.read_csv(file_path, index_col=0)
+
+
+
+    # an edge should be where the value is above the threshold
+    # adjacent nodes are marked by a 1
+    if coeff_threshold is not None and with_weights:
+        adjacency = corrs.to_numpy()
+        adjacency[adjacency < coeff_threshold] = 0
+    elif coeff_threshold is not None:
+        adjacency = np.where(corrs.to_numpy() >= coeff_threshold, 1, 0)
+    elif with_weights:
+        adjacency = corrs.to_numpy()
+
+    # reweigh edge correlations to prevent oversmoothing
+    if reweighted:
+        corrs = pd.DataFrame(data=adjacency)
+        i = 0
+        for _, row in corrs.iterrows():
+            sum = row.sum(axis=0)
+            self_connection = corrs.iloc[i, i]
+            for j, value in enumerate(row):
+                if sum == self_connection:
+                    reweight = self_connection
+                else:
+                    reweight = p / (sum - self_connection) if i != j else 1 - p
+                corrs.iloc[i, j] = reweight * corrs.iloc[i, j]
+            i = i + 1
+        adjacency = corrs.to_numpy()
+
+    return adjacency
+
+def build_edge_index_from_adjacency(adjacency_matrix, self_connections=False):
+    edge_index = []
+    for i, row in enumerate(adjacency_matrix):
+        for j, column in enumerate(row):
+            if self_connections:
+                if adjacency_matrix[i][j] != 0:
+                    edge_index.append([i, j])
+            else:
+                if i != j and adjacency_matrix[i][j] != 0:
+                    edge_index.append([i, j])
+    edge_index = torch.Tensor(edge_index)
+    return torch.t(edge_index)
+
+def get_edge_weights_from_adjacency(adjacency_matrix, self_connections=False):
+    edge_weights = []
+    for i, row in enumerate(adjacency_matrix):
+        for j, column in enumerate(row):
+            if self_connections:
+                if adjacency_matrix[i][j] != 0:
+                    edge_weights.append(adjacency_matrix[i][j])
+            else:
+                if i != j and adjacency_matrix[i][j] != 0:
+                    edge_weights.append(adjacency_matrix[i][j])
+    edge_weights = torch.Tensor(edge_weights)
+    return edge_weights
+
+def get_adjacency_and_weights(input_file, coeff_threshold=None, with_weights=False, reweighted=False, self_connections=True, p=0.2):
+
+    adjacency_matrix = build_graph_from_correlations(input_file,
+                                                     coeff_threshold=coeff_threshold,
+                                                     with_weights=with_weights,
+                                                     reweighted=reweighted,
+                                                     p=p)
+    edge_weights = get_edge_weights_from_adjacency(adjacency_matrix, self_connections)
+    edge_index = build_edge_index_from_adjacency(adjacency_matrix, self_connections)
+    return (edge_index, edge_weights)
+
 
 class Config(object):
     def __init__(self):
@@ -331,14 +404,27 @@ for epoch in range(start_epoch, cfg.total_epochs):
     loss_meter = AverageMeter()
     dataset_L = len(train_loader)
     ep_st = time.time()
-    
+
+    basepath_results = "/home/ubuntu/results/"
+
+    input_file = os.path.join(basepath_results, "correlations_peta.csv")
+
+    edge_index, edge_weights = get_adjacency_and_weights(input_file,
+                                                         with_weights=True,
+                                                         coeff_threshold=0.4,
+                                                         reweighted=True,
+                                                         self_connections=False,
+                                                         p=0.2)
+    edge_index = edge_index.cuda()
+    edge_weights = edge_weights.cuda()
+
     for step, (imgs, targets) in enumerate(train_loader):
          
         step_st = time.time()
         imgs_var = Variable(imgs).cuda()
         targets_var = Variable(targets).cuda()
 
-        score = model_w(imgs_var)
+        score = model_w(imgs_var, edge_index, edge_weights)
 
         # compute the weight
         weights = torch.zeros(targets_var.shape)

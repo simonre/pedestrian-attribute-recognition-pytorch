@@ -5,6 +5,9 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
 from .resnet import resnet50
+from torch_geometric import GCNConv
+from torch_geometric.data import Data, Batch
+
 
 
 class DeepMAR_ResNet50(nn.Module):
@@ -42,14 +45,74 @@ class DeepMAR_ResNet50(nn.Module):
         init.normal(self.classifier.weight, std=0.001)
         init.constant(self.classifier.bias, 0)
 
-    def forward(self, x):
+        self.d = 32
+        # One feature extractor per Class
+        for i in range(self.num_classes):
+            feature = nn.Sequential(
+                nn.Linear(2048, 1024),
+                nn.LeakyReLU(0.2),
+                nn.Linear(1024, self.d)
+            )
+            setattr(self, "feature%d" % i, feature)
+
+        second_layer = 32
+        self.gc1 = GCNConv(self.d, second_layer, normalize=True)
+        self.relu = nn.LeakyReLU(0.2)
+        self.gc2 = GCNConv(second_layer, 1)
+        self.relu2 = nn.LeakyReLU(0.2)
+
+        for i in range(self.num_classes):
+            classifier = nn.Sequential(
+                nn.Linear(self.d, 1)
+            )
+            setattr(self, "classifier%d" % i, classifier)
+
+        self.bn_features = torch.nn.BatchNorm1d(self.num_classes)
+        self.sig_features = torch.nn.Sigmoid()
+
+        self.bn = torch.nn.BatchNorm1d(self.num_classes)
+        self.sigmoid = torch.nn.Sigmoid()
+
+    def forward(self, x, adjacency, edge_weight):
         x = self.base(x)
-        x = F.avg_pool2d(x, x.shape[2:])
-        x = x.view(x.size(0), -1)
-        if self.drop_pool5:
-            x = F.dropout(x, p=self.drop_pool5_rate, training=self.training)
-        x = self.classifier(x)
-        return x
+        features = torch.zeros(x.shape[0], self.num_classes, self.d).to(self.device)
+        feature_outputs = torch.zeros([x.shape[0], self.num_classes]).to(self.device)
+        features = torch.transpose(features, 0, 1)
+        for i in range(self.num_classes):
+            temp = getattr(self, "feature%d" % i)(x)
+            features[i] = temp
+
+        feature_outputs = torch.transpose(feature_outputs, 0, 1)
+        features = self.relu(features)
+        features = torch.transpose(features, 0, 1)
+
+        features = self.bn_features(features)
+        features = torch.transpose(features, 0, 1)
+
+        for i in range(self.num_classes):
+            inp = features[i]
+            temp_classif = getattr(self, "classifier%d" % i)(inp)
+            temp_classif = temp_classif.view(-1)
+            feature_outputs[i] = temp_classif
+        feature_outputs = feature_outputs.transpose(0, 1)
+        features = torch.transpose(features, 0, 1)
+
+        dl = self.get_data_from_outputs(features, adjacency, edge_weight)
+        b = Batch.from_data_list(dl)
+
+        x, edge_index, edge_weight = b.x, b.edge_index.long(), b.edge_attr
+
+        x = x.to(self.device)
+        edge_index = edge_index.to(self.device)
+        if edge_weight is not None:
+            edge_weight = edge_weight.to(self.device)
+        x = self.gc1(x, edge_index, edge_weight=edge_weight)
+        x = self.relu(x)
+        x = self.gc2(x, edge_index, edge_weight=edge_weight)
+
+        x = x.view(feature_outputs.shape[0], -1)
+
+        return (x, feature_outputs)
 
 class DeepMAR_ResNet50_ExtractFeature(object):
     """
