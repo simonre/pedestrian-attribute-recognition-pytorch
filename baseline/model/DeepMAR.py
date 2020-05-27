@@ -47,7 +47,7 @@ class DeepMAR_ResNet50(nn.Module):
 
         self.d = 32
         # One feature extractor per Class
-        for i in range(self.num_classes):
+        for i in range(self.num_att):
             feature = nn.Sequential(
                 nn.Linear(2048, 1024),
                 nn.LeakyReLU(0.2),
@@ -61,24 +61,24 @@ class DeepMAR_ResNet50(nn.Module):
         self.gc2 = GCNConv(second_layer, 1)
         self.relu2 = nn.LeakyReLU(0.2)
 
-        for i in range(self.num_classes):
+        for i in range(self.num_att):
             classifier = nn.Sequential(
                 nn.Linear(self.d, 1)
             )
             setattr(self, "classifier%d" % i, classifier)
 
-        self.bn_features = torch.nn.BatchNorm1d(self.num_classes)
+        self.bn_features = torch.nn.BatchNorm1d(self.num_att)
         self.sig_features = torch.nn.Sigmoid()
 
-        self.bn = torch.nn.BatchNorm1d(self.num_classes)
+        self.bn = torch.nn.BatchNorm1d(self.num_att)
         self.sigmoid = torch.nn.Sigmoid()
 
     def forward(self, x, adjacency, edge_weight):
         x = self.base(x)
-        features = torch.zeros(x.shape[0], self.num_classes, self.d).to(self.device)
-        feature_outputs = torch.zeros([x.shape[0], self.num_classes]).to(self.device)
+        features = torch.zeros(x.shape[0], self.num_att, self.d).to(self.device)
+        feature_outputs = torch.zeros([x.shape[0], self.num_att]).to(self.device)
         features = torch.transpose(features, 0, 1)
-        for i in range(self.num_classes):
+        for i in range(self.num_att):
             temp = getattr(self, "feature%d" % i)(x)
             features[i] = temp
 
@@ -89,7 +89,7 @@ class DeepMAR_ResNet50(nn.Module):
         features = self.bn_features(features)
         features = torch.transpose(features, 0, 1)
 
-        for i in range(self.num_classes):
+        for i in range(self.num_att):
             inp = features[i]
             temp_classif = getattr(self, "classifier%d" % i)(inp)
             temp_classif = temp_classif.view(-1)
