@@ -75,6 +75,8 @@ class DeepMAR_ResNet50(nn.Module):
 
     def forward(self, x, adjacency, edge_weight):
         x = self.base(x)
+        x = F.avg_pool2d(x, x.shape[2:])
+        x = x.view(x.size(0), -1)
         features = torch.zeros(x.shape[0], self.num_att, self.d).to(self.device)
         feature_outputs = torch.zeros([x.shape[0], self.num_att]).to(self.device)
         features = torch.transpose(features, 0, 1)
