@@ -6,7 +6,7 @@ import copy
 import time
 import sys
 
-def extract_feat(feat_func, dataset, **kwargs):
+def extract_feat(feat_func, dataset, edge_index, edge_weights, **kwargs):
     """
     extract feature for images
     """
@@ -20,7 +20,7 @@ def extract_feat(feat_func, dataset, **kwargs):
     start = 0
     for ep, (imgs, labels) in enumerate(test_loader):
         imgs_var = Variable(imgs, volatile=True).cuda()
-        feat_tmp = feat_func( imgs_var )
+        feat_tmp = feat_func( imgs_var, edge_index, edge_weights )
         batch_size = feat_tmp.shape[0]
         if ep == 0:
             feat = np.zeros((N, feat_tmp.size/batch_size))

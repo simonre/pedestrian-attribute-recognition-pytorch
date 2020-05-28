@@ -380,9 +380,9 @@ transfer_optim_state(state=optimizer.state, device_id=0)
 # for evaluation
 feat_func_att = DeepMAR_ResNet50_ExtractFeature(model=model_w)
 
-def attribute_evaluate_subfunc(feat_func, test_set, **test_kwargs): 
+def attribute_evaluate_subfunc(feat_func, test_set, edge_index, edge_weights, **test_kwargs):
     """ evaluate the attribute recognition precision """
-    result = attribute_evaluate(feat_func, test_set, **test_kwargs)
+    result = attribute_evaluate(feat_func, test_set, edge_index, edge_weights, **test_kwargs)
     print('-' * 60)
     print('Evaluation on %s set:' % (cfg.test_split))
     print('Label-based evaluation: \n mA: %.4f'%(np.mean(result['label_acc'])))
@@ -482,4 +482,4 @@ for epoch in range(start_epoch, cfg.total_epochs):
     ##########################
     if (epoch + 1) % cfg.epochs_per_val == 0 or epoch+1 == cfg.total_epochs:
         print('att test with feat_func_att')
-        attribute_evaluate_subfunc(feat_func_att, test_set, **cfg.test_kwargs)
+        attribute_evaluate_subfunc(feat_func_att, test_set, edge_index, edge_weights, **cfg.test_kwargs)
