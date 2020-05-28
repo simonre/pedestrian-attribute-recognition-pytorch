@@ -130,7 +130,7 @@ class DeepMAR_ResNet50_ExtractFeature(object):
     def __init__(self, model, **kwargs):
         self.model = model
 
-    def __call__(self, imgs):
+    def __call__(self, imgs, edge_index, edge_weights):
         old_train_eval_model = self.model.training
 
         # set the model to be eval
@@ -140,7 +140,7 @@ class DeepMAR_ResNet50_ExtractFeature(object):
         if not isinstance(imgs, Variable):
             print('imgs should be type: Variable')
             raise ValueError
-        score = self.model(imgs)
+        score = self.model(imgs, edge_index, edge_weights)
         score = score.data.cpu().numpy()
 
         self.model.train(old_train_eval_model)
