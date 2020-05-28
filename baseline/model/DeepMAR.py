@@ -141,7 +141,7 @@ class DeepMAR_ResNet50_ExtractFeature(object):
             print('imgs should be type: Variable')
             raise ValueError
         score = self.model(imgs, edge_index, edge_weights)
-        score = score.data.cpu().numpy()
+        score = score[0].data.cpu().numpy()
 
         self.model.train(old_train_eval_model)
 
