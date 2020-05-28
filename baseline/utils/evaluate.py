@@ -26,7 +26,7 @@ def extract_feat(feat_func, dataset, edge_index, edge_weights, **kwargs):
         print(batch_size)
         if ep == 0:
             print(feat_tmp[0].size)
-            feat = np.zeros((N, feat_tmp[0].size/batch_size))
+            feat = np.zeros((N, int(feat_tmp[0].size/batch_size)))
         feat[start:start+batch_size, :] = feat_tmp.reshape((batch_size, -1))
         start += batch_size
     end_time = time.time() 
