@@ -31,9 +31,9 @@ def extract_feat(feat_func, dataset, edge_index, edge_weights, **kwargs):
     return feat 
 
 # attribute recognition evaluation 
-def attribute_evaluate(feat_func, dataset, **kwargs):
+def attribute_evaluate(feat_func, dataset, edge_index, edge_weights,  **kwargs):
     print("extracting features for attribute recognition")
-    pt_result = extract_feat(feat_func, dataset)
+    pt_result = extract_feat(feat_func, dataset, edge_index, edge_weights)
     # obain the attributes from the attribute dictionary
     print("computing attribute recognition result")
     N = pt_result.shape[0] 
