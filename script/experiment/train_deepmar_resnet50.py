@@ -163,6 +163,8 @@ class Config(object):
         parser.add_argument('--epochs_per_val', type=int, default=10)
         parser.add_argument('--epochs_per_save', type=int, default=50)
         parser.add_argument('--run', type=int, default=1)
+        parser.add_argument('--coeff_threshold', type=float, default=0.4)
+        parser.add_argument('--p', type=float, default=0.2)
         args = parser.parse_args()
         
         # gpu ids
@@ -234,6 +236,9 @@ class Config(object):
         self.epochs_per_val = args.epochs_per_val
         self.epochs_per_save = args.epochs_per_save
         self.run = args.run
+
+        self.coeff_threshold = args.coeff_threshold
+        self.p = args.p
         
         # for model
         model_kwargs = dict()
@@ -423,10 +428,10 @@ for epoch in range(start_epoch, cfg.total_epochs):
 
     edge_index, edge_weights = get_adjacency_and_weights(input_file,
                                                          with_weights=True,
-                                                         coeff_threshold=0.4,
+                                                         coeff_threshold=cfg.coeff_threshold,
                                                          reweighted=True,
                                                          self_connections=False,
-                                                         p=0.2)
+                                                         p=cfg.p)
     edge_index = edge_index.cuda()
     edge_weights = edge_weights.cuda()
     edge_index = edge_index.long()
