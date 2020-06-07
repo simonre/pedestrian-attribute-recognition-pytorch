@@ -62,7 +62,7 @@ class Config(object):
                 raise ValueError
         # dataset 
         datasets = dict()
-        datasets['peta'] = './dataset/peta/peta_dataset.pkl'
+        datasets['peta'] = '/home/ubuntu/code/pedestrian-attribute-recognition-pytorch/dataset/peta/peta_dataset.pkl'
         datasets['rap'] = './dataset/rap/rap_dataset.pkl'
         datasets['pa100k'] = './dataset/pa100k/pa100k_dataset.pkl'
 

@@ -21,12 +21,9 @@ def extract_feat(feat_func, dataset, edge_index, edge_weights, **kwargs):
     for ep, (imgs, labels) in enumerate(test_loader):
         imgs_var = Variable(imgs, volatile=True).cuda()
         feat_tmp = feat_func( imgs_var, edge_index, edge_weights )
-        print(feat_tmp)
-        batch_size = feat_tmp[0].shape[0]
-        print(batch_size)
+        batch_size = feat_tmp.shape[0]
         if ep == 0:
-            print(feat_tmp[0].size)
-            feat = np.zeros((N, int(feat_tmp[0].size/batch_size)))
+            feat = np.zeros((N, int(feat_tmp.size/batch_size)))
         feat[start:start+batch_size, :] = feat_tmp.reshape((batch_size, -1))
         start += batch_size
     end_time = time.time() 

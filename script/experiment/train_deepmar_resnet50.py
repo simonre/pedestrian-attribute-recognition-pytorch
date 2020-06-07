@@ -145,7 +145,7 @@ class Config(object):
         parser.add_argument('--new_params_lr', type=float, default=0.001)
         parser.add_argument('--finetuned_params_lr', type=float, default=0.001)
         parser.add_argument('--staircase_decay_at_epochs', type=eval,
-                            default=(51, ))
+                            default=(51, 101))
         parser.add_argument('--staircase_decay_multiple_factor', type=float,
                             default=0.1)
         parser.add_argument('--total_epochs', type=int, default=150)
@@ -177,12 +177,12 @@ class Config(object):
         self.run = args.run
         # Dataset #
         datasets = dict()
-        datasets['peta'] = './dataset/peta/peta_dataset.pkl'
+        datasets['peta'] = '/home/ubuntu/code/pedestrian-attribute-recognition-pytorch/dataset/peta/peta_dataset.pkl'
         datasets['rap'] = './dataset/rap/rap_dataset.pkl'
         datasets['pa100k'] = './dataset/pa100k/pa100k_dataset.pkl'
         datasets['rap2'] = './dataset/rap2/rap2_dataset.pkl'
         partitions = dict()
-        partitions['peta'] = './dataset/peta/peta_partition.pkl'
+        partitions['peta'] = '/home/ubuntu/code/pedestrian-attribute-recognition-pytorch/dataset/peta/peta_partition.pkl'
         partitions['rap'] = './dataset/rap/rap_partition.pkl'
         partitions['pa100k'] = './dataset/pa100k/pa100k_partition.pkl'
         partitions['rap2'] = './dataset/rap2/rap2_partition.pkl'
@@ -282,9 +282,12 @@ set_devices(cfg.sys_device_ids)
 normalize = transforms.Normalize(mean=cfg.mean, std=cfg.std)
 transform = transforms.Compose([
         transforms.Resize(cfg.resize),
+        transforms.Pad((24, 24)),
+        transforms.RandomCrop(cfg.resize),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(), # 3*H*W, [0, 1]
-        normalize,]) # normalize with mean/std
+        normalize,
+        transforms.RandomErasing(),]) # normalize with mean/std
 # by a subset of attributes 
 train_set = AttDataset(
     dataset = cfg.dataset, 

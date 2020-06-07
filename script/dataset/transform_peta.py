@@ -19,13 +19,13 @@ def generate_data_description(save_dir):
     """
     dataset = dict()
     dataset['description'] = 'peta'
-    dataset['root'] = './dataset/peta/images/'
+    dataset['root'] = '/home/ubuntu/code/pedestrian-attribute-recognition-pytorch/dataset/peta/images/'
     dataset['image'] = []
     dataset['att'] = []
     dataset['att_name'] = []
     dataset['selected_attribute'] = range(35)
     # load PETA.MAT
-    data = loadmat(open('./dataset/peta/PETA.mat', 'rb'))
+    data = loadmat(open('/home/ubuntu/code/pedestrian-attribute-recognition-pytorch/dataset/peta/PETA.mat', 'rb'))
     for idx in range(105):
         dataset['att_name'].append(data['peta'][0][0][1][idx,0][0])
 
@@ -47,7 +47,7 @@ def create_trainvaltest_split(traintest_split_file):
     partition['weight_trainval'] = []
     partition['weight_train'] = []
     # load PETA.MAT
-    data = loadmat(open('./dataset/peta/PETA.mat', 'rb'))
+    data = loadmat(open('/home/ubuntu/code/pedestrian-attribute-recognition-pytorch/dataset/peta/PETA.mat', 'rb'))
     for idx in range(5):
         train = (data['peta'][0][0][3][idx][0][0][0][0][:,0]-1).tolist()
         val = (data['peta'][0][0][3][idx][0][0][0][1][:,0]-1).tolist()
@@ -71,11 +71,11 @@ if __name__ == "__main__":
     parser.add_argument(
         '--save_dir',
         type=str,
-        default='./dataset/peta/')
+        default='/home/ubuntu/code/pedestrian-attribute-recognition-pytorch/dataset/peta/')
     parser.add_argument(
         '--traintest_split_file',
         type=str,
-        default="./dataset/peta/peta_partition.pkl")
+        default="/home/ubuntu/code/pedestrian-attribute-recognition-pytorch/dataset/peta/peta_partition.pkl")
     args = parser.parse_args()
     save_dir = args.save_dir
     traintest_split_file = args.traintest_split_file
