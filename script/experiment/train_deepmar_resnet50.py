@@ -352,11 +352,9 @@ criterion = relation_aware_loss
 # Optimizer
 finetuned_params = []
 new_params = []
-for n, p in model.named_parameters():
-    if n.find('classifier') >=0:
-        new_params.append(p) 
-    else:
-        finetuned_params.append(p)
+for p in model.parameters():
+
+    finetuned_params.append(p)
 param_groups = [{'params': finetuned_params, 'lr': cfg.finetuned_params_lr},
                 {'params': new_params, 'lr': cfg.new_params_lr}]
 
